@@ -4,17 +4,7 @@ import urllib
 import urllib.request
 import time
 import json
-import RPi.GPIO as GPIO
-
-
-red = 17
-green = 18
-blue = 27
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(red, GPIO.OUT)
-GPIO.setup(green, GPIO.OUT)
-GPIO.setup(blue, GPIO.OUT)
+import pygame
 
 Freq = 100 #Hz
 
@@ -26,14 +16,7 @@ url_rfid = "https://ll.0o0.moe/API/takeMyBooks"
 delaycount = 0
 Token = "SOMBMsCSDOFKOrUxG3qjTpmpdemj9z1SWKmievcHqU7j7MYmVsTEorBZqfpWWrgD5FQpXePDW6j8LkM5f8qkNW0Rc8HgzmL59rOV575hXMULQNHVO2EljSUiM3ve14QA"
 
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout=10)
-
-RED = GPIO.PWM(red, Freq)
-RED.start(0)
-GREEN = GPIO.PWM(green, Freq)
-GREEN.start(0)
-BLUE = GPIO.PWM(blue, Freq)
-BLUE.start(0)
+ser = serial.Serial('COM6', 9600, timeout=10)
 
 class RGB:
     def on(color):
