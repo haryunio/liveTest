@@ -15,6 +15,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(red, GPIO.OUT)
 GPIO.setup(green, GPIO.OUT)
 GPIO.setup(blue, GPIO.OUT)
+#GPIO.setup(cyan, GPIO.OUT)
 
 Freq = 100 #Hz
 
