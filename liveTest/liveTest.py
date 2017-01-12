@@ -1,103 +1,99 @@
 #-*-coding:utf-8
 import serial
-import urllib
-import urllib.request
 import time
 import json
+import urllib
+import urllib.request
+import RPi.GPIO as GPIO
+
 import pygame
 
-Freq = 100 #Hz
-
-bookcaseNumber = '1'
-data = ["BB A3 C3 17","3A AA A7 9B","AA A7 3A 9B","3A 9B AA A7"]
-url = "http://henocks.dothome.co.kr/f6.php"
-url2 = "https://ll.0o0.moe/API/login"
-url_rfid = "https://ll.0o0.moe/API/takeMyBooks"
+red   = 17      #color pins
+green = 18      #color pins
+blue  = 27      #color pins
+Freq  = 100
 delaycount = 0
-Token = "SOMBMsCSDOFKOrUxG3qjTpmpdemj9z1SWKmievcHqU7j7MYmVsTEorBZqfpWWrgD5FQpXePDW6j8LkM5f8qkNW0Rc8HgzmL59rOV575hXMULQNHVO2EljSUiM3ve14QA"
+bookcaseNumber = 100
 
-ser = serial.Serial('COM6', 9600, timeout=10)
+data       = []
+url_rfid   = "https://ll.0o0.moe/API/takeMyBooks"
+url_rgb    = "https://ll.0o0.moe/API/getMyLights"
+Token      = "SOMBMsCSDOFKOrUxG3qjTpmpdemj9z1SWKmievcHqU7j7MYmVsTEorBZqfpWWrgD5FQpXePDW6j8LkM5f8qkNW0Rc8HgzmL59rOV575hXMULQNHVO2EljSUiM3ve14QA"
+
+
+
+ser = serial.Serial('COM5', 9600, timeout=10)
 
 class RGB:
-    def on(color):
-        print("RGB LED on with color : "+color)
-        this.color(100,100,100)
-
     def off():
-        print("RGB LED off")
-        this.color(0,0,0)
+        this.on(0,0,0)
 
-    def color(R, G, B):
+    def on(R, G, B):
+        R = int((R/255)*100)
+        G = int((G/255)*100)
+        B = int((B/255)*100)
         RED.ChangeDutyCycle(R)
         GREEN.ChangeDutyCycle(G)
         BLUE.ChangeDutyCycle(B)
+    
+    def led():
+        js = json.loads(server.req_rgb())
+        if js["success"] == True and js["lightColor"] != None:
+            RGB.on(int(js["lightColor"][1:3], 16), 
+                   int(js["lightColor"][3:5], 16), 
+                   int(js["lightColor"][5:7], 16))
+        else:
+            RGB.off()
 
 class server:
-    def req(dat):
-        sdata = urllib.parse.urlencode({'flag': dat}).encode('utf-8')
-        request = urllib.request.Request(url)
-        request.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
-        f = urllib.request.urlopen(request, sdata)
-        return f.read().decode('utf-8')
+    def __init__():
+        self.sdata = {'libraryAPIToken' : Token, 
+                      'bookcaseNumber'  : bookcaseNumber}
+    def __init__(dat):
+        self.sdata = {'libraryAPIToken' : Token, 
+                      'bookcaseNumber'  : bookcaseNumber, 
+                      'bookCodes'       : dat}
 
-    def req_rfid(dat):
-        a = 0
-        while(len(dat) > a):
-            dat[a] = dat[a].replace(" ", "_")
-            a += 1
-        sdata = {'libraryAPIToken' : Token, 'bookcaseNumber' : bookcaseNumber, 'bookCodes' : dat}
-        request = urllib.request.Request(url3)
+    def req_rgb():
+        sdata = {'libraryAPIToken' : Token, 
+                 'bookcaseNumber'  : bookcaseNumber}
+
+        request = urllib.request.Request(url_rgb)
         request.add_header('Content-Type', 'application/json; charset=utf-8')
-        jsondata = json.dumps(sdata)
+        jsondata        = json.dumps(sdata)
         jsondataasbytes = jsondata.encode('utf-8')
         request.add_header('Content-Length', len(jsondataasbytes))
-        f = urllib.request.urlopen(request, jsondataasbytes) 
+
+        f = urllib.request.urlopen(request, jsondataasbytes)
         return f.read().decode('utf-8')
+    
+    def req_rfid(dat):
+        sdata = {'libraryAPIToken' : Token, 
+                 'bookcaseNumber'  : bookcaseNumber, 
+                 'bookCodes'       : dat}
 
-    def req_login(dat, URL):
-        sdata = urllib.parse.urlencode({"ID": "abcde12345", "password" : "abcde12345"}).encode('utf-8')
-        request = urllib.request.Request(URL)
-        request.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
-        f = urllib.request.urlopen(request, sdata)
+        request = urllib.request.Request(url_rfid)
+        request.add_header('Content-Type', 'application/json; charset=utf-8')
+        jsondata        = json.dumps(sdata)
+        jsondataasbytes = jsondata.encode('utf-8')
+        request.add_header('Content-Length', len(jsondataasbytes))
+
+        f = urllib.request.urlopen(request, jsondataasbytes)
         return f.read().decode('utf-8')
-
-    def checkRequest():
-        a = server.req(1)
-        print("checked server call : " + a)
-        if(int(a) == 1):
-            return 1
-        else:
-            return 0
-
-    def receiveRequest():
-        a = server.req(2)
-        print("received server call : " + a)
-        return a
-
-    def sendData(RfidData):
-        server.req(RfidData)
-        print("RFID Data Sent")
 
 try:
  while 1:
      delaycount += 1
-     response = ser.readline()
-     if response != '':
-        if data.count(response[2:-3]) == 0:
-            data.append(response[2:-3])
-            print (response)
-     if delaycount > 500:
-      if server.checkRequest() == 1:
-         delaycount = 0
-         stat = str(server.receiveRequest())
-         if stat[0:1] == "1":
-             server.sendData(data)
-         elif stat[0:1] == "2":
-             RGB.off()
-         else:
-             RGB.on(stat)
-     
+     response = str(ser.readline())[4:12]
 
+     if (len(response) == 11) and (data.count(response) == 0):
+            data.append(response)
+            print(response)
+     if delaycount > 4:
+         delaycount = 0
+         server.req(Data)
+         server.led()
+     
 except KeyboardInterrupt:
     print("QUITTTING")
     RUNNING = False
